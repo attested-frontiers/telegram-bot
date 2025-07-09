@@ -1,10 +1,11 @@
 {
   "name": "base-telegram-bot",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "src/main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "test": "node test-api.js",
+    "start": "node src/main.js",
+    "start:old": "node bot.js"
   },
   "keywords": [],
   "author": "",
@@ -12,9 +13,12 @@
   "type": "commonjs",
   "description": "",
   "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "cors": "^2.8.5",
     "dotenv": "^16.5.0",
+    "elliptic": "^6.6.1",
     "ethers": "^6.14.1",
-    "node-telegram-bot-api": "^0.66.0",
-    "@supabase/supabase-js": "^2.39.0"
+    "express": "^5.1.0",
+    "node-telegram-bot-api": "^0.66.0"
   }
 }
