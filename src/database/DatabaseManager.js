@@ -320,7 +320,7 @@ class DatabaseManager {
     const { data, error } = await this.supabase
       .from('samba_contracts')
       .select('contract_address')
-      .eq('contract_address', contractAddress.toLowerCase())
+      .ilike('contract_address', contractAddress.toLowerCase())
       .eq('is_active', true)
       .single();
 

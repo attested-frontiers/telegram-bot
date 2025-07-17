@@ -1,7 +1,7 @@
 const { iface } = require('../../blockchain');
 const { eventProcessors } = require('../../blockchain');
 const { getFiatCode, formatConversionRate, formatUSDC, formatTimestamp, getPlatformName, txLink, createDepositKeyboard } = require('../../utils');
-const { ZKP2P_GROUP_ID, ZKP2P_TOPIC_ID } = require('../../config/constants');
+const config = require('../../config');
 const { db } = require('../../database');
 
 // Event handler function
@@ -24,30 +24,34 @@ const createContractEventHandler = (bot) => {
           const topicDepositId = parseInt(log.topics[2], 16);
           console.log('📊 Extracted deposit ID from topic:', topicDepositId);
 
-          const interestedUsers = await db.getUsersInterestedInDeposit(topicDepositId);
-          if (interestedUsers.length > 0) {
-            console.log(`⚠️ Sending unrecognized event to ${interestedUsers.length} users`);
+          // const interestedUsers = await db.getUsersInterestedInDeposit(topicDepositId);
+          // if (interestedUsers.length > 0) {
+          console.log(`⚠️ Sending unrecognized event to ${interestedUsers.length} users`);
 
-            const message = `
+          const message = `
 ⚠️ *Unrecognized Event for Deposit*
 • *Deposit ID:* \`${topicDepositId}\`
 • *Event Signature:* \`${log.topics[0]}\`
 • *Block:* ${log.blockNumber}
 • *Tx:* [View on BaseScan](${txLink(log.transactionHash)})
 `.trim();
-
-            interestedUsers.forEach(chatId => {
-              const sendOptions = {
-                parse_mode: 'Markdown',
-                disable_web_page_preview: true,
-                reply_markup: createDepositKeyboard(topicDepositId)
-              };
-              if (chatId === ZKP2P_GROUP_ID) {
-                sendOptions.message_thread_id = ZKP2P_TOPIC_ID;
-              }
-              bot.sendMessage(chatId, message, sendOptions);
-            });
-          }
+          console.log("Step 1", config.ATTESTED_GROUP_ID, config.SAMBA_TOPIC_ID)
+          const result = await bot.sendMessage(config.ATTESTED_GROUP_ID, 'test2', {
+            message_thread_id: config.SAMBA_TOPIC_ID,
+            parse_mode: 'Markdown',
+          });
+          console.log("Step 2")
+          await bot.sendMessage(config.ATTESTED_GROUP_ID, '🤖 hmmmmm!', {
+            message_thread_id: config.SAMBA_TOPIC_ID,
+            parse_mode: 'Markdown',
+          });
+          console.log("Step 3")
+          await bot.sendMessage(config.ATTESTED_GROUP_ID, message, {
+            message_thread_id: config.SAMBA_TOPIC_ID,
+            // disable_web_page_preview: true,
+            parse_mode: 'Markdown',
+            // reply_markup: createDepositKeyboard(topicDepositId)
+          });
         }
         return;
       }
@@ -62,7 +66,7 @@ const createContractEventHandler = (bot) => {
         const id = Number(depositId);
 
         console.log('🧪 IntentSignaled depositId:', id);
-        
+
         // Store intent details for later use in notifications
         eventProcessors.storeIntentDetails(intentHash, fiatCurrency, conversionRate, verifier);
       }

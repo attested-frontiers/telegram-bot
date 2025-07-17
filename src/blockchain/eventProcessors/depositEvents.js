@@ -1,5 +1,5 @@
 const { formatUSDC, txLink, createDepositKeyboard } = require('../../utils');
-const { ZKP2P_GROUP_ID, ZKP2P_TOPIC_ID } = require('../../config/constants');
+const config = require('../../config');
 
 async function handleDepositReceived(parsed, log, db, bot) {
   const { depositId, depositor, token, amount, intentAmountRange } = parsed.args;
@@ -12,7 +12,9 @@ async function handleDepositReceived(parsed, log, db, bot) {
   await db.storeDepositAmount(id, usdcAmount);
 
   // Check if this deposit is from a samba contract
+  console.log(`🔍 Checking if deposit ${id} is from samba contract: ${depositor}`);
   const isSambaContract = await db.isSambaContract(depositor);
+  console.log("Result: ", isSambaContract);
   if (!isSambaContract) {
     console.log(`🚫 Deposit ${id} not from samba contract ${depositor} - ignoring`);
     return;
@@ -21,35 +23,24 @@ async function handleDepositReceived(parsed, log, db, bot) {
   console.log(`✅ Deposit ${id} is from samba contract ${depositor} - processing`);
 
   // Send notification for new deposits from samba contracts
-  const interestedUsers = await db.getUsersInterestedInDeposit(id);
-  if (interestedUsers.length > 0) {
-    console.log(`📢 Sending new deposit notification to ${interestedUsers.length} users for samba deposit ${id}`);
+  console.log(`📢 Sending new deposit notification`);
 
-    const message = `
-💰 *New Samba Deposit Created*
+  const message = `
+💰 *New Samba Deposit to Market Make*
 • *Deposit ID:* \`${id}\`
-• *Contract:* \`${depositor}\`
+• *Swap Contract:* \`${depositor}\`
 • *Amount:* ${formatUSDC(amount)} USDC
-• *Token:* ${token}
-• *Intent Range:* ${intentAmountRange}
-• *Block:* ${log.blockNumber}
 • *Tx:* [View on BaseScan](${txLink(log.transactionHash)})
 `.trim();
+  const sendOptions = {
+    parse_mode: 'Markdown',
+    disable_web_page_preview: true,
+    reply_markup: createDepositKeyboard(id),
+    message_thread_id: config.SAMBA_TOPIC_ID
+  };
 
-    for (const chatId of interestedUsers) {
-      const sendOptions = {
-        parse_mode: 'Markdown',
-        disable_web_page_preview: true,
-        reply_markup: createDepositKeyboard(id)
-      };
-      if (chatId === ZKP2P_GROUP_ID) {
-        sendOptions.message_thread_id = ZKP2P_TOPIC_ID;
-      }
-      bot.sendMessage(chatId, message, sendOptions);
-    }
-  } else {
-    console.log(`🚫 No users interested in deposit ${id} - no notification sent`);
-  }
+  bot.sendMessage(config.ATTESTED_GROUP_ID, message, sendOptions);
+
 }
 
 async function handleDepositWithdrawn(parsed, log) {
