@@ -34,7 +34,7 @@ function startApiServer() {
     const key = fs.readFileSync(`${sslPath}/privkey.pem`, 'utf-8');
     const cert = fs.readFileSync(`${sslPath}/fullchain.pem`, 'utf-8');
     const credentials = { key, cert };
-    server = https.createServer(credentials, app).listen(config.PORT, () => {
+    server = https.createServer(credentials, app).listen(config.PORT,  '0.0.0.0', () => {
       console.log(`🔒 HTTPS server running on port ${config.PORT}`);
     });
   } else {
